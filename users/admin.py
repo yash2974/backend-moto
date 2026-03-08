@@ -2,6 +2,15 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from crews.models import Crew
+from .models import Profile
+
+# Inline for user profile
+class ProfileInline(admin.StackedInline):
+    model = Profile
+    can_delete = False
+    verbose_name = "Profile"
+    verbose_name_plural = "Profile"
+    fields = ['image_url']
 
 # Inline for crews owned by user
 class CrewOwnerInline(admin.TabularInline):
@@ -31,7 +40,7 @@ class CrewMemberInline(admin.TabularInline):
 
 # Extend the default UserAdmin
 class UserAdmin(BaseUserAdmin):
-    inlines = [CrewOwnerInline, CrewMemberInline]
+    inlines = [ProfileInline, CrewOwnerInline, CrewMemberInline]
     
     def get_inline_instances(self, request, obj=None):
         if not obj:

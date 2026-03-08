@@ -19,7 +19,7 @@ class Crew(BaseModel):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True, null=True)
     type = models.CharField(max_length=50, choices=CrewType.choices, default=CrewType.RACING)
-    logo_url = models.URLField(blank=True, null=True)
+    logo_url = models.URLField(max_length=1000, blank=True, null=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='crews')
     members = models.ManyToManyField(User, related_name='crew_memberships', blank=True)
     country = models.CharField(max_length=255, blank=True, null=True)
