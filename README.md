@@ -117,10 +117,14 @@ Social groups for riders to connect and organize rides.
 
 ### Crews
 
+**Public Crews:**
+
 - `GET /api/crews/` - List all accessible crews (public, invite-only, or member of)
 - `GET /api/crews/{id}/` - Get crew details
-- `POST /api/crews/{id}/join/` - Join a crew
+- `POST /api/crews/{id}/join/` - Join a crew (immediate for public, creates request for invite-only)
 - `POST /api/crews/{id}/leave/` - Leave a crew
+
+**Owned Crews:**
 
 - `GET /api/my-crews/` - List crews owned by current user
 - `POST /api/my-crews/` - Create new crew
@@ -128,6 +132,12 @@ Social groups for riders to connect and organize rides.
 - `PUT /api/my-crews/{id}/` - Update owned crew
 - `PATCH /api/my-crews/{id}/` - Partial update owned crew
 - `DELETE /api/my-crews/{id}/` - Delete owned crew
+
+**Request Management (Owner Only):**
+
+- `GET /api/my-crews/{id}/requests/` - Get pending join requests for a crew
+- `POST /api/my-crews/{id}/requests/{request_id}/approve/` - Approve a join request
+- `POST /api/my-crews/{id}/requests/{request_id}/reject/` - Reject a join request
 
 ## Installation & Setup
 
@@ -291,13 +301,151 @@ kickstanddrfbackend/
 - CSRF protection
 - User-scoped data access (users can only access their own data)
 
+## Testing
+
+The project includes comprehensive test coverage for all key features. Tests are organized by app and cover models, API endpoints, permissions, and edge cases.
+
+### Running Tests
+
+Run all tests:
+
+```bash
+python manage.py test
+```
+
+Run tests for a specific app:
+
+```bash
+python manage.py test crews
+python manage.py test vehicles
+python manage.py test expenses
+python manage.py test users
+```
+
+Run a specific test class:
+
+```bash
+python manage.py test crews.tests.CrewJoinAPITestCase
+```
+
+Run with verbose output:
+
+```bash
+python manage.py test --verbosity=2
+```
+
+### Crew Tests
+
+**Test Coverage: 23 tests**
+
+#### Model Tests (2 tests)
+
+- `test_create_crew` - Verify crew model creation
+- `test_crew_string_representation` - Test **str** method
+
+#### Crew Creation Tests (5 tests)
+
+- `test_create_public_crew` - Create a public crew with all fields
+- `test_create_invite_only_crew` - Create an invite-only crew
+- `test_create_crew_without_auth` - Verify authentication is required
+- `test_create_crew_duplicate_name` - Test unique name constraint
+- Owner is automatically added as a member upon creation
+
+#### Join Crew Tests (5 tests)
+
+- `test_join_public_crew` - Join a public crew (immediate membership)
+- `test_join_invite_only_crew` - Join invite-only crew (creates pending request)
+- `test_join_already_member` - Prevent duplicate memberships
+- `test_join_as_owner` - Owner cannot join their own crew
+- `test_join_request_duplicate` - Prevent duplicate join requests
+
+#### Leave Crew Tests (3 tests)
+
+- `test_leave_crew` - Successfully leave a crew
+- `test_owner_cannot_leave` - Owner cannot leave their own crew
+- `test_leave_when_not_member` - Cannot leave if not a member
+
+#### Request Management Tests (6 tests)
+
+- `test_get_pending_requests` - List all pending join requests
+- `test_approve_request` - Approve a join request (adds member to crew)
+- `test_reject_request` - Reject a join request
+- `test_process_already_processed_request` - Cannot process twice
+- `test_process_nonexistent_request` - Handle invalid request IDs
+- `test_non_owner_cannot_process_request` - Only owners can manage requests
+
+#### Crew Listing Tests (3 tests)
+
+- `test_list_crews_authenticated` - List visible crews based on privacy
+- `test_list_my_crews` - List only crews owned by user
+- `test_list_crews_unauthenticated` - Require authentication
+
+### Test Database
+
+Tests use a separate test database that is automatically created and destroyed:
+
+- Database: `test_<your_database_name>`
+- All migrations are applied automatically
+- Test data is isolated from production/development data
+
+### Writing New Tests
+
+When adding new features, follow these testing patterns:
+
+1. **Create test file** in the app's `tests.py`
+2. **Import required modules:**
+   ```python
+   from rest_framework.test import APITestCase, APIClient
+   from rest_framework import status
+   from django.contrib.auth.models import User
+   ```
+3. **Use `setUp()` method** to create test data
+4. **Test positive and negative cases**
+5. **Verify database state changes** after operations
+6. **Check response status codes and messages**
+
+Example test structure:
+
+```python
+class MyFeatureTestCase(APITestCase):
+    def setUp(self):
+        # Create test users and data
+        self.user = User.objects.create_user(username='test', password='pass')
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    def test_feature_success(self):
+        # Test successful operation
+        response = self.client.post('/api/endpoint/', data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_feature_validation_error(self):
+        # Test validation errors
+        response = self.client.post('/api/endpoint/', {})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+```
+
+### Continuous Integration
+
+Tests should pass before merging any pull request. Run tests locally before pushing:
+
+```bash
+# Run all tests
+python manage.py test
+
+# Check for any errors
+echo $?  # Should output 0 if all tests pass
+```
+
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+3. **Write tests for your changes**
+4. **Ensure all tests pass** (`python manage.py test`)
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
 
 ## License
 

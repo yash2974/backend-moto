@@ -50,3 +50,10 @@ class UserAdmin(BaseUserAdmin):
 # Re-register UserAdmin
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
+
+# Register Profile separately
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ['user', 'image_url']
+    search_fields = ['user__username', 'user__email']
+    list_filter = ['user__date_joined']

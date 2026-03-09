@@ -1,6 +1,6 @@
 from django.http import request
 from rest_framework import serializers
-from .models import Crew
+from .models import Crew, Request
 
 class CrewSerializer(serializers.ModelSerializer):
     owner = serializers.StringRelatedField(read_only=True)
@@ -23,3 +23,8 @@ class CrewSerializer(serializers.ModelSerializer):
 
         return crew
 
+class RequestCrewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Request
+        fields = ['id', 'crew', 'status']
+        read_only_fields = ['status']
